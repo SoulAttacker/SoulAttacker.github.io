@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content>
+  <meta name="author" content="Soul Attacker">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="栈介绍">
+  <meta property="og:description" content="PWN JOURNEY">
+  <meta property="og:site_name" content="Soul Attacker PWN Time">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="http://yoursite.com">
+  
+    <link rel="alternate" href="/atom.xml" title="Soul Attacker PWN Time" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>Soul Attacker PWN Time</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">栈介绍</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/SoulAttacker">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:740196508@qq.com">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Soul Attacker</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-04-28</span>
+            <span class="time">00:56:54</span>
+          </span>
+          
+          <!--  Categories  -->
+            <span class="categories info">Under 
+
+<a href="/categories/PWN/">PWN</a>
+</span>
+          
+        </div>
+        <!-- Tags -->
+        
+          <div class="post-tags text-muted">
+            Tags: 
+
+<a class="tag" href="/tags/foundation/">#foundation</a>
+
+
+          </div>
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <blockquote>
+<p>本文 引自 <a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/stack-intro/" target="_blank" rel="noopener">ctf-wiki</a> &amp; <a href="http://www.cnblogs.com/clover-toeic/p/3755401.html" target="_blank" rel="noopener">C 语言函数调用栈（一）</a> &amp; <a href="http://www.cnblogs.com/clover-toeic/p/3756668.html" target="_blank" rel="noopener">C 语言函数调用栈（二）</a></p>
+</blockquote>
+<h1 id="栈介绍"><a href="#栈介绍" class="headerlink" title="栈介绍"></a>栈介绍</h1><h2 id="基本栈介绍"><a href="#基本栈介绍" class="headerlink" title="基本栈介绍"></a>基本栈介绍</h2><p>栈是一种典型的后进先出 (Last in First Out) 的数据结构，其操作主要有压栈 (push) 与出栈 (pop) 两种操作。</p>
+<p><img src="/2019/04/28/栈介绍/1.png" alt="基本栈操作"></p>
+<p>👇这是重点哦！</p>
+<p><strong>程序的栈是从进程地址空间的高地址向低地址增长的</strong>！</p>
+<p>👇寄存器：</p>
+<p><img src="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/figure/register.png" alt="img"></p>
+<p>32位 和 64位 程序简单区别：</p>
+<ul>
+<li><p>x86</p>
+<ul>
+<li><strong>函数参数</strong>在<strong>函数返回地址</strong>的上方</li>
+</ul>
+</li>
+<li><p>x64</p>
+<ul>
+<li>System V AMD64 ABI (Linux、FreeBSD、macOS 等采用) 中前六个整型或指针参数依次保存在 <strong>RDI, RSI, RDX, RCX, R8 和 R9 寄存器</strong>中，如果还有更多的参数的话才会保存在栈上。</li>
+<li>内存地址不能大于 0x00007FFFFFFFFFFF，<strong>6 个字节长度</strong>，否则会抛出异常。</li>
+</ul>
+</li>
+</ul>
+<h2 id="C-语言函数调用栈"><a href="#C-语言函数调用栈" class="headerlink" title="C 语言函数调用栈"></a>C 语言函数调用栈</h2><h3 id="PART-1"><a href="#PART-1" class="headerlink" title="PART 1"></a>PART 1</h3><p>程序的执行过程可看作<strong>连续的函数调用</strong>。当一个函数执行完毕时，程序要<strong>回到调用指令的下一条指令</strong>(紧接call指令)处继续执行。函数调用过程通常使用<strong>堆栈实现</strong>，每个用户态进程对应一个调用栈结构(call stack)。编译器使用堆栈传递<strong>函数参数</strong>、<strong>保存返回地址</strong>、<strong>临时保存寄存器原有值</strong>(即函数调用的上下文)以备恢复以及存储本地局部变量。</p>
+<h4 id="1-寄存器分配"><a href="#1-寄存器分配" class="headerlink" title="1 寄存器分配"></a>1 寄存器分配</h4><p>寄存器用于存放程序执行中用到的数据和指令。</p>
+<p> Intel 32位体系结构(简称IA32)处理器包含8个四字节寄存器：</p>
+<p><img src="/2019/04/28/栈介绍/register.png" alt="img"></p>
+<p>某些指令可能以固定的寄存器作为源寄存器或目的寄存器，如一些特殊的算术操作指令imull/mull/cltd/idivl/divl要求一个参数必须在%eax中，其运算结果存放在%edx(higher 32-bit)和%eax (lower32-bit)中；又如函数返回值通常保存在%eax中，等等。</p>
+<p> 对于寄存器%eax、%ebx、%ecx和%edx，各自可作为<strong>两个独立的16位寄存器</strong>使用，而<strong>低16位寄存器还可继续分为两个独立的8位寄存器</strong>使用。编译器会根据操作数大小选择合适的寄存器来生成汇编代码。在汇编语言层面，这组通用寄存器以<strong>%e</strong>(AT&amp;T语法)或直接以<strong>e</strong>(Intel语法)开头来引用，例如mov $5, %eax或mov eax, 5表示将立即数5赋值给寄存器%eax。</p>
+<p> 在x86处理器中，<strong>EIP(Instruction Pointer)是指令寄存器</strong>，指向处理器<strong>下条等待执行的指令地址</strong>(代码段内的偏移量)，每次执行完相应汇编指令EIP值就会增加。<strong>ESP(Stack Pointer)是堆栈指针寄存器</strong>，<strong>存放执行函数对应栈帧的栈顶地址(也是系统栈的顶部)</strong>，且始终指向栈顶；<strong>EBP(Base Pointer)是栈帧基址指针寄存器</strong>，存放执行函数对应栈帧的栈底地址，用于<strong>C运行库访问栈中的局部变量和参数</strong>。</p>
+<p>注意，EIP是个特殊寄存器，不能像访问通用寄存器那样访问它，即找不到可用来寻址EIP并对其进行读写的操作码(OpCode)。EIP可被jmp、call和ret等指令隐含地改变。</p>
+<p>不同架构的CPU，寄存器名称被添加不同前缀以指示寄存器的大小。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">【扩展阅读】栈帧指针寄存器</span><br><span class="line">为了访问函数局部变量，必须能定位每个变量。局部变量相对于堆栈指针ESP的位置在进入函数时就已确定，理论上变量可用ESP加偏移量来引用，但ESP会在函数执行期随变量的压栈和出栈而变动。</span><br><span class="line">许多编译器使用帧指针寄存器FP(Frame Pointer)记录栈帧基地址。局部变量和函数参数都可通过帧指针引用，因为它们到FP的距离不会受到压栈和出栈操作的影响。有些资料将帧指针称作局部基指针(LB-local base pointer)。</span><br><span class="line">在Intel CPU中，寄存器BP(EBP)用作帧指针。在Motorola CPU中，除A7(堆栈指针SP)外的任何地址寄存器都可用作FP。当堆栈向下(低地址)增长时，以FP地址为基准，函数参数的偏移量是正值，而局部变量的偏移量是负值。</span><br></pre></td></tr></table></figure>
+<h4 id="2-寄存器使用约定"><a href="#2-寄存器使用约定" class="headerlink" title="2 寄存器使用约定"></a>2 寄存器使用约定</h4><p>程序寄存器组是唯一能被<strong>所有函数共享</strong>的资源。虽然某一时刻只有一个函数在执行，但需保证当某个函数调用其他函数时，被调函数不会修改或覆盖主调函数稍后会使用到的寄存器值。</p>
+<p>根据惯例，寄存器%eax、%edx和%ecx为<strong>主调函数保存寄存器</strong>(caller-saved registers)，当函数调用时，若主调函数希望保持这些寄存器的值，则必须在调用前<strong>显式</strong>地将其保存在栈中；<strong>被调函数可以覆盖这些寄存器</strong>，而<strong>不会破坏主调函数所需的数据</strong>。寄存器%ebx、%esi和%edi为<strong>被调函数保存寄存器</strong>(callee-saved registers)，即被调函数在覆盖这些寄存器的值时，必须<strong>先将寄存器原值压入栈中保存起来</strong>，并在函数返回前从栈中恢复其原值，因为<strong>主调函数可能也在使用这些寄存器</strong>。此外，被调函数必须保持寄存器%ebp和%esp，并在函数返回后将其恢复到调用前的值，亦即<strong>必须恢复主调函数的栈帧</strong>。</p>
+<h4 id="3-栈帧结构"><a href="#3-栈帧结构" class="headerlink" title="3 栈帧结构"></a>3 栈帧结构</h4><p>函数调用经常是嵌套的，在同一时刻，堆栈中会有多个函数的信息。每个<strong>未完成运行的函数</strong>占用一个<strong>独立</strong>的<strong>连续区域</strong>，称作<strong>栈帧(Stack Frame)</strong>。栈帧是堆栈的<strong>逻辑片段</strong>，当调用函数时逻辑栈帧被压入堆栈, 当函数返回时逻辑栈帧被从堆栈中弹出。栈帧存放着<strong>函数参数</strong>，<strong>局部变量</strong>及<strong>恢复前一栈帧所需要的数据</strong>等。</p>
+<p>编译器利用栈帧，使得<strong>函数参数</strong>和函数中<strong>局部变量</strong>的分配与释放对程序员透明。编译器<strong>将控制权移交函数本身之前</strong>，<strong>插入特定代码</strong>将<strong>函数参数压入栈帧</strong>中，并<strong>分配足够的内存空间</strong>用于存放函数中的<strong>局部变量</strong>。</p>
+<p>栈帧的<strong>边界</strong>由<strong>栈帧基地址指针EBP</strong>和堆<strong>栈指针ESP界定</strong>(指针存放在相应寄存器中)，函数中对大部分数据的访问都基于EBP进行。</p>
+<p>为更具描述性，以下称EBP为帧基指针， ESP为栈顶指针，并在引用汇编代码时分别记为%ebp和%esp。</p>
+<p>函数调用栈的典型内存布局：</p>
+<p><img src="/2019/04/28/栈介绍/2.png" alt="img"></p>
+<p>图中给出主调函数(caller)和被调函数(callee)的栈帧布局，”m(%ebp)”表示以EBP为基地址、偏移量为m字节的内存空间(中的内容)。该图基于两个假设：第一，函数返回值不是结构体或联合体，否则第一个参数将位于”12(%ebp)” 处；第二，每个参数都是4字节大小(栈的粒度为4字节)。在本文后续章节将就参数的传递和大小问题做进一步的探讨。函数可以没有参数和局部变量，故图中“Argument(参数)”和“Local Variable(局部变量)”不是函数栈帧结构的必需部分。</p>
+<p>函数调用时入栈顺序为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">实参N~1 -&gt; 主调函数返回地址 -&gt; 主调函数栈基指针EBP -&gt; 被调函数局部变量1~N</span><br></pre></td></tr></table></figure>
+<p>其中，主调函数将参数按照调用约定依次入栈(图中为<strong>从右到左</strong>)，然后将指令指针EIP入栈以保存主调函数的返回地址(下一条待执行指令的地址)。<em>进入被调函数时，被调函数将主调函数的帧基指针EBP入栈，并将主调函数的栈顶指针ESP值赋给被调函数的EBP(作为被调函数的栈底)，接着改变ESP值来为函数局部变量预留空间。此时被调函数帧基指针指向被调函数的栈底。以该地址为基准，向上(栈底方向)可获取主调函数的返回地址、参数值，向下(栈顶方向)能获取被调函数的局部变量值，而该地址处又存放着上一层主调函数的帧基指针值。本级调用结束后，将EBP指针值赋给ESP，使ESP再次指向被调函数栈底以释放局部变量；再将已压栈的主调函数帧基指针弹出到EBP，并弹出返回地址到EIP。ESP继续上移越过参数，最终回到函数调用前的状态，即恢复原来主调函数的栈帧。如此递归便形成函数调用栈。</em></p>
+<p> <strong>EBP</strong>指针在当前函数运行过程中(未调用其他函数时)<strong>保持不变</strong>。在函数调用前，ESP指针指向栈顶地址，也是栈底地址。在函数完成现场保护之类的初始化工作后，ESP会始终指向当前函数栈帧的栈顶，此时，若当前函数又调用另一个函数，则会将此时的EBP视为旧EBP压栈，而与新调用函数有关的内容会从当前ESP所指向位置开始压栈。</p>
+<p>在栈帧中并未为被调函数保存寄存器的空间指定标准的存储位置</p>
+<p><img src="/2019/04/28/栈介绍/4.jpg" alt="img"></p>
+<p><em>多线程还没学（。。。。。）学了之后回来补充///再次滑稽</em></p>
+<h4 id="4-堆栈操作"><a href="#4-堆栈操作" class="headerlink" title="4 堆栈操作"></a>4 堆栈操作</h4><p>函数调用时的具体步骤如下：</p>
+<ol>
+<li>主调函数将被调函数所要求的参数，根据相应的函数调用约定，保存在运行时栈中。该操作会改变程序的栈指针。 <em>注：x86平台将参数压入调用栈中。而x86_64平台具有16个通用64位寄存器，故调用函数时前6个参数通常由寄存器传递，其余参数才通过栈传递。</em></li>
+<li>主调函数将控制权移交给被调函数(使用call指令)。函数的返回地址(待执行的下条指令地址)保存在程序栈中(压栈操作隐含在call指令中)。</li>
+<li>若有必要，被调函数会设置帧基指针，并保存被调函数希望保持不变的寄存器值。</li>
+<li>被调函数通过修改栈顶指针的值，为自己的局部变量在运行时栈中分配内存空间，并从帧基指针的位置处向低地址方向存放被调函数的局部变量和临时变量。</li>
+<li>被调函数执行自己任务，此时可能需要访问由主调函数传入的参数。若被调函数返回一个值，该值通常保存在一个指定寄存器中(如EAX)。</li>
+<li>一旦被调函数完成操作，为该函数局部变量分配的栈空间将被释放。这通常是步骤4的逆向执行。</li>
+<li>恢复步骤3中保存的寄存器值，包含主调函数的帧基指针寄存器。</li>
+<li>被调函数将控制权交还主调函数(使用ret指令)。根据使用的函数调用约定，该操作也可能从程序栈上清除先前传入的参数。</li>
+<li>主调函数再次获得控制权后，可能需要将先前的参数从栈上清除。在这种情况下，对栈的修改需要将帧基指针值恢复到步骤1之前的值。</li>
+</ol>
+<p>步骤3与步骤4在函数调用之初常一同出现，统称为<strong>函数序(prologue)</strong>；步骤6到步骤8在函数调用的最后常一同出现，统称为<strong>函数跋(epilogue)</strong>。函数序和函数跋是编译器自动添加的开始和结束汇编代码，其实现与CPU架构和编译器相关。除步骤5代表函数实体外，其它所有操作组成函数调用。</p>
+<p>主要指令：</p>
+<ul>
+<li><strong>压栈</strong>(push)：<strong>栈顶指针ESP减小4个字节</strong>；以字节为单位将寄存器数据(<strong>四字节，不足补零</strong>)压入堆栈，从高到低按字节<strong>依次</strong>将数据存入ESP-1、ESP-2、ESP-3、ESP-4指向的地址单元。</li>
+<li><p><strong>出栈</strong>(pop)：栈顶指针ESP指向的栈中数据被取回到寄存器；栈顶指针ESP增加4个字节。</p>
+</li>
+<li><p><strong>调用</strong>(call)：将当前的指令指针EIP(该指针指向紧接在call指令后的下条指令)压入堆栈，以备返回时能恢复执行下条指令；然后设置EIP指向被调函数代码开始处，以跳转到被调函数的入口地址执行。</p>
+</li>
+<li><strong>离开</strong>(leave)： 恢复主调函数的栈帧以准备返回。等价于指令序列movl %ebp, %esp(恢复原ESP值，指向被调函数栈帧开始处)和popl %ebp(恢复原ebp的值，即主调函数帧基指针)。</li>
+<li><strong>返回</strong>(ret)：与call指令配合，用于<strong>从函数或过程返回</strong>。<strong>从栈顶弹出返回地址</strong>(之前call指令保存的下条指令地址)到<strong>EIP寄存器</strong>中，程序<strong>转到该地址处继续执行</strong>(此时ESP指向进入函数时的第一个参数)。若<strong>带立即数</strong>，<strong>ESP再加立即数</strong>(丢弃一些在执行call前入栈的参数)。使用该指令前，应使当前栈顶指针所指向位置的内容正好是先前call指令保存的返回地址。</li>
+</ul>
+<p><img src="/2019/04/28/栈介绍/6.png" alt="imag"></p>
+<p>若主调函数和调函数<strong>均未使用</strong>局部变量寄存器EDI、ESI和EBX，则编译器<strong>无须</strong>在函数序中对其<strong>压栈</strong>，以便提高程序的执行效率。</p>
+<p><img src="/2019/04/28/栈介绍/7.png" alt="imag"></p>
+<p>两种压栈方式均遵循C调用约定，但方式二中主调函数在调用返回后<strong>并未显式清理堆栈空间</strong>。</p>
+<h3 id="PART-2"><a href="#PART-2" class="headerlink" title="PART 2"></a>PART 2</h3><h4 id="5-函数调用约定"><a href="#5-函数调用约定" class="headerlink" title="5 函数调用约定"></a>5 函数调用约定</h4><p>创建一个栈帧的最重要步骤是<strong>主调函数如何向栈中传递函数参数</strong>：</p>
+<ol>
+<li><p>函数参数的传递顺序和方式</p>
+<ul>
+<li>最常见的参数传递方式是通过堆栈传递。主调函数将参数压入栈中，被调函数以相对于帧基指针的正偏移量来访问栈中的参数。对于有多个参数的函数，调用约定需规定主调函数将参数压栈的顺序(从左至右还是从右至左)。某些调用约定允许使用寄存器传参以提高性能。</li>
+</ul>
+</li>
+<li><p>栈的维护</p>
+<ul>
+<li>主调函数将参数压栈后调用被调函数体，返回时需将被压栈的参数全部弹出，以便将栈恢复到调用前的状态。该清栈过程可由主调函数负责完成，也可由被调函数负责完成。</li>
+</ul>
+</li>
+<li><p>名字修饰(Name-mangling)策略</p>
+<ul>
+<li>又称函数名修饰(Decorated Name)规则。编译器在链接时为区分不同函数，对函数名作不同修饰。若函数之间的调用约定不匹配，可能会产生堆栈异常或链接错误等问题。因此，为了保证程序能正确执行，所有的函数调用均应遵守一致的调用约定。</li>
+</ul>
+</li>
+</ol>
+<h5 id="5-1-常见调用约定"><a href="#5-1-常见调用约定" class="headerlink" title="5.1 常见调用约定"></a>5.1 常见调用约定</h5><h6 id="1-cdecl调用"><a href="#1-cdecl调用" class="headerlink" title="1. cdecl调用"></a>1. cdecl调用</h6><p>又称C调用约定，是C/C++编译器默认的函数调用约定。。所有非C++成员函数和未使用stdcall或fastcall声明的函数都默认是cdecl方式。函数参数按照从右到左的顺序入栈，函数调用者负责清除栈中的参数，返回值在EAX中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">【扩展阅读】可变参数函数支持条件</span><br><span class="line"></span><br><span class="line">若要支持可变参数的函数，则参数应自右向左进栈，并且由主调函数负责清除栈中的参数(参数出栈)。</span><br><span class="line"></span><br><span class="line">首先，参数按照从右向左的顺序压栈，则参数列表最左边(第一个)的参数最接近栈顶位置。所有参数距离帧基指针的偏移量都是常数，而不必关心已入栈的参数数目。只要不定的参数的数目能根据第一个已明确的参数确定，就可使用不定参数。例如printf函数，第一个参数即格式化字符串可作为后继参数指示符。通过它们就可得到后续参数的类型和个数，进而知道所有参数的尺寸。当传递的参数过多时，以帧基指针为基准，获取适当数目的参数，其他忽略即可。若函数参数自左向右进栈，则第一个参数距离栈帧指针的偏移量与已入栈的参数数目有关，需要计算所有参数占用的空间后才能精确定位。当实际传入的参数数目与函数期望接受的参数数目不同时，偏移量计算会出错！</span><br><span class="line"></span><br><span class="line">其次，调用函数将参数压栈，只有它才知道栈中的参数数目和尺寸，因此调用函数可安全地清栈。而被调函数永远也不能事先知道将要传入函数的参数信息，难以对栈顶指针进行调整。</span><br><span class="line"></span><br><span class="line">C++为兼容C，仍然支持函数带有可变的参数。但在C++中更好的选择常常是函数多态。</span><br></pre></td></tr></table></figure>
+<h6 id="2-stdcall调用约定-微软命名"><a href="#2-stdcall调用约定-微软命名" class="headerlink" title="2. stdcall调用约定(微软命名)"></a>2. stdcall调用约定(微软命名)</h6><p>Pascal程序缺省调用方式，WinAPI也多采用该调用约定。stdcall调用约定主调函数参数从右向左入栈，除指针或引用类型参数外所有参数采用传值方式传递，由被调函数负责清除栈中的参数，返回值在EAX中。</p>
+<h6 id="3-fastcall调用约定"><a href="#3-fastcall调用约定" class="headerlink" title="3. fastcall调用约定"></a>3. fastcall调用约定</h6><p>stdcall调用约定的变形，通常使用ECX和EDX寄存器传递前两个DWORD(四字节双字)类型或更少字节的函数参数，其余参数按照从右向左的顺序入栈，被调函数在返回前负责清除栈中的参数，返回值在 EAX 中。</p>
+<h6 id="4-thiscall调用约定"><a href="#4-thiscall调用约定" class="headerlink" title="4. thiscall调用约定"></a>4. thiscall调用约定</h6><p>C++类中的非静态函数必须接收一个指向主调对象的类指针(this指针)，并可能较频繁的使用该指针。主调函数的对象地址必须由调用者提供，并在调用对象非静态成员函数时将对象指针以参数形式传递给被调函数。编译器默认使用thiscall调用约定以高效传递和存储C++类的非静态成员函数的this指针参数。 thiscall调用约定函数参数按照从右向左的顺序入栈。</p>
+<h6 id="5-naked-call调用约定"><a href="#5-naked-call调用约定" class="headerlink" title="5. naked call调用约定"></a>5. naked call调用约定</h6><p>对于使用naked call方式声明的函数，编译器不产生保存(prologue)和恢复(epilogue)寄存器的代码，且不能用return返回返回值(只能用内嵌汇编返回结果)，故称naked call。该调用约定用于一些特殊场合，如声明处于非C/C++上下文中的函数，并由程序员自行编写初始化和清栈的内嵌汇编指令。注意，naked call并非类型修饰符，故该调用约定必须与__declspec同时使用</p>
+<h6 id="6-pascal调用约定"><a href="#6-pascal调用约定" class="headerlink" title="6. pascal调用约定"></a>6. pascal调用约定</h6><p>Pascal语言调用约定，参数按照从左至右的顺序入栈。Win3.X(16位)时支持真正的pascal调用约定；而Win9.X(32位)以后pascal约定由stdcall约定代替(以C约定压栈以Pascal约定清栈)。</p>
+<p><img src="/2019/04/28/栈介绍/8.png" alt="img"></p>
+<p><img src="/2019/04/28/栈介绍/9.png" alt="img"></p>
+<h5 id="5-2-调用约定影响"><a href="#5-2-调用约定影响" class="headerlink" title="5.2 调用约定影响"></a>5.2 调用约定影响</h5><p>当函数导出被其他程序员所使用(如库函数)时，该函数应遵循主要的调用约定，以便于程序员使用。若函数仅供内部使用，则其调用约定可只被使用该函数的程序所了解。</p>
+<p>在多语言混合编程(包括A语言中使用B语言开发的第三方库)时，若函数的原型声明和函数体定义不一致或调用函数时声明了不同的函数约定，将可能导致严重问题(如堆栈被破坏)。</p>
+<p>不同编译器产生栈帧的方式不尽相同，主调函数不一定能正常完成清栈工作；而被调函数必然能自己完成正常清栈，因此，在跨(开发)平台调用中，通常使用stdcall调用约定(不少WinApi均采用该约定)。</p>
+<p>此外，主调函数和被调函数所在模块采用相同的调用约定，但分别使用C++和C语法编译时，会出现链接错误(报告被调函数未定义)。</p>
+<h5 id="5-3-x86函数参数传递方法"><a href="#5-3-x86函数参数传递方法" class="headerlink" title="5.3 x86函数参数传递方法"></a>5.3 x86函数参数传递方法</h5><p>所有传递给被调函数的参数都通过堆栈来完成，其压栈顺序是以函数参数从右到左的顺序。当向被调函数传递参数时，所有参数最后形成一个数组。</p>
+<h6 id="5-3-1-整型和指针参数的传递"><a href="#5-3-1-整型和指针参数的传递" class="headerlink" title="5.3.1 整型和指针参数的传递"></a>5.3.1 整型和指针参数的传递</h6><p><img src="/2019/04/28/栈介绍/10.png" alt="img"></p>
+<h6 id="5-3-2-浮点参数的传递"><a href="#5-3-2-浮点参数的传递" class="headerlink" title="5.3.2 浮点参数的传递"></a>5.3.2 浮点参数的传递</h6><p><img src="/2019/04/28/栈介绍/11.png" alt="img"></p>
+<h6 id="5-3-3-结构体和联合体参数的传递"><a href="#5-3-3-结构体和联合体参数的传递" class="headerlink" title="5.3.3 结构体和联合体参数的传递"></a>5.3.3 结构体和联合体参数的传递</h6><p> 结构体和联合体参数的传递与整型、浮点参数类似，只是其占用字节大小视数据结构的定义不同而异。x86处理器上栈宽是4字节，故结构体在栈上所占用的字节数为4的倍数。编译器会对结构体进行适当的填充以使得结构体大小满足4字节对齐的要求。</p>
+<p> 对于一些RISC处理器(如PowerPC)，其参数传递并不是全部通过栈来实现。PowerPC处理器寄存器中，R3～R10共8个寄存器用于传递整型或指针参数，F1～F8共8个寄存器用于传递浮点参数。当所需传递的参数少于8个时，不需要用到栈。结构体和long double参数的传递通过指针来完成，这与x86处理器完全不同。</p>
+<h5 id="5-4-x86函数返回值传递方法"><a href="#5-4-x86函数返回值传递方法" class="headerlink" title="5.4 x86函数返回值传递方法"></a>5.4 x86函数返回值传递方法</h5><p>函数返回值可通过寄存器传递。当被调用函数需要返回结果给调用函数时：</p>
+<ol>
+<li><p>若返回值不超过4字节(如int、short、char、指针等类型)，通常将其保存在EAX寄存器中，调用方通过读取EAX获取返回值。</p>
+</li>
+<li><p>若返回值大于4字节而小于8字节(如long long或_int64类型)，则通过EAX+EDX寄存器联合返回，其中EDX保存返回值高4字节，EAX保存返回值低4字节。</p>
+</li>
+<li><p>若返回值为浮点类型(如float和double)，则通过专用的协处理器浮点数寄存器栈的栈顶返回。</p>
+</li>
+<li><p>若返回值为结构体或联合体，则主调函数向被调函数传递一个额外参数，该参数指向将要保存返回值的地址。具体步骤可能为：</p>
+<ol>
+<li><p>主调函数将显式的实参逆序入栈；</p>
+</li>
+<li><p>将接收返回值的结构体变量地址作为隐藏参数入栈(若未定义该接收变量，则在栈上额外开辟空间作为接收返回值的临时变量)；</p>
+</li>
+<li>被调函数将待返回数据拷贝到隐藏参数所指向的内存地址，并将该地址存入%eax寄存器。因此，在被调函数中完成返回值的赋值工作。</li>
+</ol>
+</li>
+<li><p>不要返回指向栈内存的指针，如返回被调函数内局部变量地址(包括局部数组名)。因为函数返回后，其栈帧空间被“释放”，原栈帧内分配的局部变量空间的内容是不稳定和不被保证的。</p>
+<p>函数返回值通过寄存器传递，无需空间分配等操作，故返回值的代价很低。基于此原因，C89规范中约定，不写明返回值类型的函数，返回值类型默认为<code>int</code>。但这会带来类型安全隐患，如函数定义时返回值为浮点数，而函数未声明或声明时未指明返回值类型，则调用时默认从寄存器EAX(而不是浮点数寄存器)中获取返回值，导致错误！因此在C++中，不写明返回值类型的函数返回值类型为<code>void</code>，表示不返回值。</p>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">【扩展阅读】GCC返回结构体和联合体</span><br><span class="line"></span><br><span class="line">通常GCC被配置为使用与目标系统一致的函数调用约定。这通过机器描述宏来实现。但是，在一些目标机上采用不同方式返回结构体和联合体的值。因此，使用PCC编译的返回这些类型的函数不能被使用GCC编译的代码调用，反之亦然。但这并未造成麻烦，因为很少有Unix库函数返回结构体或联合体。</span><br><span class="line"></span><br><span class="line">GCC代码使用存放int或double类型返回值的寄存器来返回1、2、4或8个字节的结构体和联合体(GCC通常还将此类变量分配在寄存器中)。其它大小的结构体和联合体在返回时，将其存放在一个由调用者传递的地址中(通常在寄存器中)。</span><br><span class="line"></span><br><span class="line">相比之下，PCC在大多目标机上返回任何大小的结构体和联合体时，都将数据复制到一个静态存储区域，再将该地址当作指针值返回。调用者必须将数据从那个内存区域复制到需要的地方。这比GCC使用的方法要慢，而且不可重入。</span><br><span class="line"></span><br><span class="line">在一些目标机上(如RISC机器和80386)，标准的系统约定是将返回值的地址传给子程序。在这些机器上，当使用这种约定方法时，GCC被配置为与标准编译器兼容。这可能会对于1，2，4或8字节的结构体不兼容。</span><br><span class="line"></span><br><span class="line">GCC使用系统的标准约定来传递参数。在一些机器上，前几个参数通过寄存器传递；在另一些机器上，所有的参数都通过栈传递。原本可在所有机器上都使用寄存器来传递参数，而且此法还可能显著提高性能。但这样就与使用标准约定的代码完全不兼容。所以这种改变只在将GCC作为系统唯一的C编译器时才实用。当拥有一套完整的GNU 系统，能够用GCC来编译库时，可在特定机器上实现寄存器参数传递。</span><br><span class="line"></span><br><span class="line">在一些机器上(特别是SPARC)，一些类型的参数通过“隐匿引用”(invisible reference)来传递。这意味着值存储在内存中，将值的内存地址传给子程序</span><br></pre></td></tr></table></figure>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        </p><p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+
