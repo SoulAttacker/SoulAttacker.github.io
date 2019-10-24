@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content>
+  <meta name="author" content="Soul Attacker">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="基本ROP(一)ret2text">
+  <meta property="og:description" content="PWN JOURNEY">
+  <meta property="og:site_name" content="Soul Attacker PWN Time">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="http://yoursite.com">
+  
+    <link rel="alternate" href="/atom.xml" title="Soul Attacker PWN Time" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>Soul Attacker PWN Time</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">基本ROP(一)ret2text</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/SoulAttacker">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:740196508@qq.com">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Soul Attacker</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-04-29</span>
+            <span class="time">20:41:38</span>
+          </span>
+          
+          <!--  Categories  -->
+            <span class="categories info">Under 
+
+<a href="/categories/PWN/">PWN</a>
+</span>
+          
+        </div>
+        <!-- Tags -->
+        
+          <div class="post-tags text-muted">
+            Tags: 
+
+<a class="tag" href="/tags/ROP/">#ROP</a>
+
+
+          </div>
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <blockquote>
+<p>该文引自 <a href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/basic-rop/" target="_blank" rel="noopener">ctf-wiki</a></p>
+</blockquote>
+<h1 id="基本ROP"><a href="#基本ROP" class="headerlink" title="基本ROP"></a>基本ROP</h1><p>随着 NX 保护的开启，以往直接向栈或者堆上直接注入代码的方式难以继续发挥效果。攻击者们也提出来相应的方法来绕过保护，目前主要的是 ROP(Return Oriented Programming)</p>
+<p>主要思想:</p>
+<p><strong>栈缓冲区溢出的基础上，利用程序中已有的小片段 (gadgets) 来改变某些寄存器或者变量的值，从而控制程序的执行流程。</strong></p>
+<p>所谓 gadgets 就是以 ret 结尾的指令序列，通过这些指令序列，我们可以修改某些地址的内容，方便控制程序的执行流程。</p>
+<p>核心在于利用了指令集中的 ret 指令，改变了指令流的执行顺序。</p>
+<p>ROP 攻击一般得满足如下条件：</p>
+<ul>
+<li>程序存在溢出，并且可以控制返回地址。</li>
+<li>可以找到满足条件的 gadgets 以及相应 gadgets 的地址。</li>
+</ul>
+<h2 id="ret2text"><a href="#ret2text" class="headerlink" title="ret2text"></a>ret2text</h2><h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>ret2text 即控制程序执行程序本身已有的的代码 (.text)。</p>
+<ul>
+<li>首先检查文件基本内容（32位or64位）</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_1.png" alt="imag"></p>
+<ul>
+<li>丢到IDA 里 <code>gets</code> 是危险函数</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_2.png" alt="imag"></p>
+<ul>
+<li>在secure函数中有shell</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_3.png" alt="imag"></p>
+<ul>
+<li>检查安全机制</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_4.png" alt="imag"></p>
+<ul>
+<li>计算填充</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_5.png" alt="imag"></p>
+<ul>
+<li>找到shell地址</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_6_0.png" alt="imag"></p>
+<ul>
+<li>编写exp</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_6.png" alt="imag"></p>
+<ul>
+<li>getshell</li>
+</ul>
+<p><img src="/2019/04/29/基本ROP/1_7.png" alt="imag"></p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        </p><p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

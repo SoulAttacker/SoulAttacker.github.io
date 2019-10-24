@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <!-- Html Head Tag-->
+  <head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content>
+  <meta name="author" content="Soul Attacker">
+  <!-- Open Graph Data -->
+  <meta property="og:title" content="基本ROP(二)ret2shellcode">
+  <meta property="og:description" content="PWN JOURNEY">
+  <meta property="og:site_name" content="Soul Attacker PWN Time">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="http://yoursite.com">
+  
+    <link rel="alternate" href="/atom.xml" title="Soul Attacker PWN Time" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+
+  <!-- Site Title -->
+  <title>Soul Attacker PWN Time</title>
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <!-- Custom CSS -->
+  
+  <link rel="stylesheet" href="/css/style.light.css">
+
+  <!-- Google Analytics -->
+  
+
+</head>
+
+  <body>
+    <!-- Page Header -->
+
+
+<header class="site-header header-background" style="background-image: url(/img/default-banner-dark.jpg)">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="page-title with-background-image">
+          <p class="title">基本ROP(二)ret2shellcode</p>
+          <p class="subtitle"></p>
+        </div>
+        <div class="site-menu with-background-image">
+          <ul>
+            
+              <li>
+                <a href="/">
+                  
+                  Home
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="/archives">
+                  
+                  Archives
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="https://github.com/SoulAttacker">
+                  
+                  Github
+                  
+                </a>
+              </li>
+            
+              <li>
+                <a href="mailto:740196508@qq.com">
+                  
+                  Email
+                  
+                </a>
+              </li>
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<article>
+  <div class="container typo">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <div class="post-info text-muted">
+          
+            <!-- Author -->
+            <span class="author info">By Soul Attacker</span>
+          
+          <!-- Date -->
+          <span class="date-time info">On
+            <span class="date">2019-04-29</span>
+            <span class="time">20:41:38</span>
+          </span>
+          
+          <!--  Categories  -->
+            <span class="categories info">Under 
+
+<a href="/categories/PWN/">PWN</a>
+</span>
+          
+        </div>
+        <!-- Tags -->
+        
+          <div class="post-tags text-muted">
+            Tags: 
+
+<a class="tag" href="/tags/ROP/">#ROP</a>
+
+
+          </div>
+        
+        <!-- Post Main Content -->
+        <div class="post-content">
+          <h2 id="ret2shellcode"><a href="#ret2shellcode" class="headerlink" title="ret2shellcode"></a>ret2shellcode</h2><h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>ret2shellcode，即控制程序执行 shellcode 代码。shellcode 指的是用于完成某个功能的汇编代码，常见的功能主要是获取目标系统的 shell。<strong>一般来说，shellcode 需要我们自己填充。这其实是另外一种典型的利用方法，即此时我们需要自己去填充一些可执行的代码</strong>。<strong><em>需要对应的 binary 在运行时，shellcode 所在的区域具有可执行权限</em></strong></p>
+<p><strong>获得执行system(“/bin/sh”)汇编代码所对应的机器码 asm(shellcraft.sh()) </strong></p>
+<ol>
+<li>首先放到 IDA 可以看到 危险函数(gets()) </li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_1.png" alt="imag"></p>
+<ol start="2">
+<li>文件基本信息（32位）</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_3.png" alt="imag"></p>
+<ol start="3">
+<li>查看保护（全关）</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_2.png" alt="imag"></p>
+<ol start="4">
+<li>cyclic 辅助计算 payload</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_4.png" alt="imag"></p>
+<ol start="5">
+<li>观察到该文件没有调用system 函数。。。。。那就写入</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_5.png" alt="imag"></p>
+<ol start="6">
+<li>打算写入buf段 看到 在0x0804a080处 而且在.bss段</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_6.png" alt="imag"></p>
+<ol start="7">
+<li>查看.bss段处的perm(rwx)</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_7.png" alt="imag"></p>
+<ol start="8">
+<li>构造payload</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_8.png" alt="imag"></p>
+<ol start="9">
+<li>getshell</li>
+</ol>
+<p><img src="/2019/04/29/基本ROP-2/2_9.png" alt="imag"></p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+
+
+    <!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+        <p class="copyright text-muted">
+          Theme By <a target="_blank" href="https://github.com/levblanc">Levblanc.</a>
+          Inspired By <a target="_blank" href="https://github.com/klugjo/hexo-theme-clean-blog">Clean Blog.</a>
+        </p><p class="copyright text-muted">
+          Powered By <a target="_blank" href="https://hexo.io/">Hexo.</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <!-- After Footer Scripts -->
+<script src="/js/highlight.pack.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+    var codeBlocks = Array.prototype.slice.call(document.getElementsByTagName('pre'))
+    codeBlocks.forEach(function(block, index) {
+      hljs.highlightBlock(block);
+    });
+  });
+</script>
+
+  </body>
+</html>
+
